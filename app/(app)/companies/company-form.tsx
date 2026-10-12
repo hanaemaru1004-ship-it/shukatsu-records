@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { FormState } from "./actions";
-import { Field, Message, SubmitButton, useKeepForm } from "@/components/ui";
+import { Field, Message, SubmitButton, useKeepForm, CancelButton } from "@/components/ui";
 import { inputCls } from "@/components/styles";
 import { EXTRA_INDUSTRY_VALUE } from "@/lib/constants";
 
@@ -48,7 +48,10 @@ export function CompanyForm({ action, industries, values = {}, submitLabel }: {
       <Field label="事業内容"><textarea name="business_description" rows={4} defaultValue={values.business_description ?? ""} className={inputCls} /></Field>
       <Field label="その他メモ"><textarea name="memo" rows={3} defaultValue={values.memo ?? ""} className={inputCls} /></Field>
       <Message error={state.error} success={state.success} />
-      <SubmitButton pending={pending}>{submitLabel}</SubmitButton>
+      <div className="flex gap-2">
+        <SubmitButton pending={pending}>{submitLabel}</SubmitButton>
+        <CancelButton />
+      </div>
     </form>
   );
 }

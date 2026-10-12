@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { FormState } from "../actions";
-import { Message, SubmitButton, useKeepForm } from "@/components/ui";
+import { Message, SubmitButton, useKeepForm, CancelButton } from "@/components/ui";
 import { inputCls } from "@/components/styles";
 import { RATING_ITEMS, overallRating } from "@/lib/rating";
 import { Stars } from "@/components/stars";
@@ -57,7 +57,10 @@ export function RatingForm({ action, values }: {
         ))}
       </div>
       <Message error={state.error} success={state.success} />
-      <SubmitButton pending={pending}>保存する</SubmitButton>
+      <div className="flex gap-2">
+        <SubmitButton pending={pending}>保存する</SubmitButton>
+        <CancelButton />
+      </div>
     </form>
   );
 }

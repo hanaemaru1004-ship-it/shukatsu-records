@@ -7,6 +7,8 @@ import { deleteCompany, updateCompany } from "../actions";
 import { CompanyForm } from "../company-form";
 import { ResearchForm } from "./research-form";
 import { saveResearch } from "./research-actions";
+import { ViewEdit } from "@/components/view-edit";
+import { CompanyView, RatingView, ResearchView } from "@/components/detail-views";
 import { RatingForm } from "./rating-form";
 import { saveRating } from "./rating-actions";
 import { CompanyEvents } from "@/components/company-events";
@@ -52,6 +54,12 @@ export default async function CompanyDetail({ params, searchParams }: {
     ? (await supabase.from("company_ratings").select("*").eq("company_id", id).maybeSingle()).data
     : null;
 
+  // 保存済みの内容があれば閲覧表示、無ければ最初から入力フォームを表示する
+  const filled = (o: Record<string, unknown> | null | undefined, keys?: string[]) =>
+    Object.entries(o ?? {}).some(([k, v]) => (!keys || keys.some((p) => k.endsWith(p))) && v !== null && v !== undefined && String(v).trim() !== "");
+  const hasResearch = filled(research as Record<string, unknown> | null, ["reason", "attractions", "job_description", "location", "salary", "benefits", "competitors", "strengths", "memo"]) || refs.length > 0;
+  const hasRating = filled(rating as Record<string, unknown> | null, ["_rating", "_comment"]);
+
   const now = nowMs();
   const events = current.key === "events"
     ? ((await supabase.from("events").select("*, companies(name)").eq("company_id", id).order("starts_at")).data ?? []).map(toEventRow)
@@ -80,14 +88,16 @@ export default async function CompanyDetail({ params, searchParams }: {
 
       {current.key === "basic" ? (
         <div className="space-y-6">
-          <div className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
-            <CompanyForm
-              action={updateCompany.bind(null, id)}
-              industries={(inds ?? []).map((i) => i.name)}
-              values={company}
-              submitLabel="保存する"
-            />
-          </div>
+          <ViewEdit view={<CompanyView c={company} />}>
+            <div className="rounded-xl bg-white p-5 ring-1 ring-slate-200">
+              <CompanyForm
+                action={updateCompany.bind(null, id)}
+                industries={(inds ?? []).map((i) => i.name)}
+                values={company}
+                submitLabel="保存する"
+              />
+            </div>
+          </ViewEdit>
           <div className="flex items-center justify-between rounded-xl bg-white p-4 ring-1 ring-slate-200">
             <p className="text-sm text-slate-600">この企業と、関連する記録・日程をすべて削除します。</p>
             <DeleteButton
@@ -98,9 +108,16 @@ export default async function CompanyDetail({ params, searchParams }: {
           </div>
         </div>
       ) : current.key === "research" ? (
-        <ResearchForm action={saveResearch.bind(null, id)} values={research ?? {}} refs={refs} />
+        <ViewEdit
+          startEditing={!hasResearch}
+          view={<ResearchView r={research ?? {}} refs={refs} />}
+        >
+          <ResearchForm action={saveResearch.bind(null, id)} values={research ?? {}} refs={refs} />
+        </ViewEdit>
       ) : current.key === "rating" ? (
-        <RatingForm action={saveRating.bind(null, id)} values={rating ?? {}} />
+        <ViewEdit startEditing={!hasRating} view={<RatingView v={rating ?? {}} />}>
+          <RatingForm action={saveRating.bind(null, id)} values={rating ?? {}} />
+        </ViewEdit>
       ) : current.key === "events" ? (
         <CompanyEvents companyId={id} companyName={company.name} events={events} now={now} />
       ) : current.key === "records" ? (

@@ -143,7 +143,7 @@ export async function RecordsTab({ companyId, status, filters }: { companyId: st
                 </summary>
                 <div className="space-y-4 border-t border-slate-100 px-4 py-4 text-sm">
                   {e.body}
-                  <Link href={`/companies/${companyId}/records/${r.id}`} className="inline-block text-blue-800 underline">編集・削除</Link>
+                  <Link href={`/companies/${companyId}/records/${r.id}`} className={btnSecondary}>✏️ 編集・削除</Link>
                 </div>
               </details>
             </li>

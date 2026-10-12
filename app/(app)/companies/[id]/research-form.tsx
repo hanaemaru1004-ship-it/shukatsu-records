@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import type { FormState } from "../actions";
-import { Field, Message, SubmitButton, useKeepForm } from "@/components/ui";
+import { Field, Message, SubmitButton, useKeepForm, CancelButton } from "@/components/ui";
 import { btnSecondary, inputCls } from "@/components/styles";
 
 export type ResearchValues = Partial<Record<
@@ -80,7 +80,10 @@ export function ResearchForm({ action, values, refs }: {
       </section>
 
       <Message error={state.error} success={state.success} />
-      <SubmitButton pending={pending}>保存する</SubmitButton>
+      <div className="flex gap-2">
+        <SubmitButton pending={pending}>保存する</SubmitButton>
+        <CancelButton />
+      </div>
     </form>
   );
 }
