@@ -8,13 +8,69 @@ import { btnPrimary, btnSecondary, inputCls } from "@/components/styles";
 
 export type RecordFilters = { rtype?: string; rstage?: string; rsort?: string };
 
-const SECTIONS = [
-  ["intern_impression", "インターン参加の感想"],
-  ["intern_reflection", "インターンでの反省"],
-  ["interview_reflection", "面接後の反省"],
-  ["gd_reflection", "グループディスカッションの反省"],
-  ["memo", "その他メモ"],
-] as const;
+
+type RecordRow = {
+  id: string; title: string; record_type: string; record_date: string; stage: string | null;
+  intern_impression: string | null; intern_reflection: string | null; interview_reflection: string | null;
+  gd_reflection: string | null; memo: string | null;
+  record_items: { kind: string; question: string; answer: string; sort_order: number }[] | null;
+};
+
+const Text = ({ label, value }: { label: string; value: string }) => (
+  <div>
+    <h3 className="font-medium text-slate-700">{label}</h3>
+    <p className="mt-1 whitespace-pre-wrap text-slate-700">{value}</p>
+  </div>
+);
+
+const QA = ({ label, items, prefix }: { label: string; items: { question: string; answer: string }[]; prefix?: [string, string] }) => (
+  <div className="space-y-2">
+    <h3 className="font-medium text-slate-700">{label}</h3>
+    {items.map((i, n) => (
+      <div key={n} className="rounded-lg bg-slate-50 p-3">
+        <p className="font-medium">{prefix?.[0]}{i.question || "(設問なし)"}</p>
+        <p className="mt-1 whitespace-pre-wrap text-slate-700">{prefix?.[1]}{i.answer}</p>
+      </div>
+    ))}
+  </div>
+);
+
+/**
+ * 履歴は項目ごとに別々に表示する。
+ * 新規保存では項目ごとに別の記録になるが、以前にまとめて保存した記録（複数項目を含む）も、ここで項目ごとに分けて見せる。
+ */
+function splitRecord(r: RecordRow) {
+  const items = [...(r.record_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+  const es = items.filter((i) => i.kind === "es");
+  const iv = items.filter((i) => i.kind === "interview");
+  const scope = r.record_type.startsWith("インターンシップ") ? "インターンシップ" : "本選考";
+  const out: { key: string; label: string; title: string; body: React.ReactNode }[] = [];
+  const add = (key: string, label: string, body: React.ReactNode) => out.push({ key, label, title: "", body });
+
+  if (es.length) add("es", `${scope}ES`, <QA label="ESで書いた内容" items={es} />);
+  if (iv.length || r.interview_reflection) {
+    add("iv", `${scope}面接`, (
+      <>
+        {iv.length > 0 && <QA label="面接の質問と回答" items={iv} prefix={["Q. ", "A. "]} />}
+        {r.interview_reflection && <Text label="面接後の反省" value={r.interview_reflection} />}
+      </>
+    ));
+  }
+  if (r.intern_impression || r.intern_reflection) {
+    add("intern", "インターンシップ", (
+      <>
+        {r.intern_impression && <Text label="インターン参加の感想" value={r.intern_impression} />}
+        {r.intern_reflection && <Text label="インターンでの反省" value={r.intern_reflection} />}
+      </>
+    ));
+  }
+  if (r.gd_reflection) add("gd", "グループディスカッション", <Text label="グループディスカッションの反省" value={r.gd_reflection} />);
+  if (r.memo) add("memo", out.length ? "その他メモ" : r.record_type, <Text label="その他メモ" value={r.memo} />);
+  if (!out.length) add("empty", r.record_type, null);
+
+  // 1項目だけの記録は保存されたタイトルをそのまま、複数項目の記録は項目ごとのタイトルにする
+  return out.map((e) => ({ ...e, title: out.length === 1 ? r.title : `${r.record_date} ${e.label}` }));
+}
 
 export async function RecordsTab({ companyId, status, filters }: { companyId: string; status: string; filters: RecordFilters }) {
   const { rtype = "", rstage = "", rsort = "new" } = filters;
@@ -76,56 +132,22 @@ export async function RecordsTab({ companyId, status, filters }: { companyId: st
         </div>
       ) : (
         <ul className="space-y-3">
-          {records.map((r) => {
-            const items = [...(r.record_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
-            const es = items.filter((i) => i.kind === "es");
-            const iv = items.filter((i) => i.kind === "interview");
-            return (
-              <li key={r.id} className="rounded-xl bg-white ring-1 ring-slate-200">
-                <details>
-                  <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                    <span className="font-medium text-blue-900">{r.title}</span>
-                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-800">{r.record_type}</span>
-                    {r.stage && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{r.stage}</span>}
-                    <span className="text-xs text-slate-500">{r.record_date}</span>
-                  </summary>
-                  <div className="space-y-4 border-t border-slate-100 px-4 py-4 text-sm">
-                    {es.length > 0 && (
-                      <div className="space-y-2">
-                        <h3 className="font-medium text-slate-700">ESで書いた内容</h3>
-                        {es.map((i, n) => (
-                          <div key={n} className="rounded-lg bg-slate-50 p-3">
-                            <p className="font-medium">{i.question || "(設問なし)"}</p>
-                            <p className="mt-1 whitespace-pre-wrap text-slate-700">{i.answer}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {iv.length > 0 && (
-                      <div className="space-y-2">
-                        <h3 className="font-medium text-slate-700">面接の質問と回答</h3>
-                        {iv.map((i, n) => (
-                          <div key={n} className="rounded-lg bg-slate-50 p-3">
-                            <p className="font-medium">Q. {i.question}</p>
-                            <p className="mt-1 whitespace-pre-wrap text-slate-700">A. {i.answer}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {SECTIONS.map(([key, label]) =>
-                      r[key] ? (
-                        <div key={key}>
-                          <h3 className="font-medium text-slate-700">{label}</h3>
-                          <p className="mt-1 whitespace-pre-wrap text-slate-700">{r[key]}</p>
-                        </div>
-                      ) : null,
-                    )}
-                    <Link href={`/companies/${companyId}/records/${r.id}`} className="inline-block text-blue-800 underline">編集・削除</Link>
-                  </div>
-                </details>
-              </li>
-            );
-          })}
+          {(records as RecordRow[]).flatMap((r) => splitRecord(r).map((e) => (
+            <li key={`${r.id}-${e.key}`} className="rounded-xl bg-white ring-1 ring-slate-200">
+              <details>
+                <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+                  <span className="font-medium text-blue-900">{e.title}</span>
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-800">{e.label}</span>
+                  {r.stage && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{r.stage}</span>}
+                  <span className="text-xs text-slate-500">{r.record_date}</span>
+                </summary>
+                <div className="space-y-4 border-t border-slate-100 px-4 py-4 text-sm">
+                  {e.body}
+                  <Link href={`/companies/${companyId}/records/${r.id}`} className="inline-block text-blue-800 underline">編集・削除</Link>
+                </div>
+              </details>
+            </li>
+          )))}
         </ul>
       )}
     </div>

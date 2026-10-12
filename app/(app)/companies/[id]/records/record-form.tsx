@@ -39,11 +39,36 @@ function ItemList({ kind, items, setItems, qLabel, aLabel, addLabel }: {
   );
 }
 
+/** インターンシップ / 本選考 の選択（選んだ区分で記録の種類が決まる） */
+function ScopeSelect({ name, label, defaultValue }: { name: string; label: string; defaultValue: string }) {
+  return (
+    <Field label={label} required>
+      <select name={name} defaultValue={defaultValue} className={`${inputCls} sm:w-auto`}>
+        <option>本選考</option>
+        <option>インターンシップ</option>
+      </select>
+    </Field>
+  );
+}
+
 export function RecordForm({ action, values = {}, initialItems = [], submitLabel }: {
   action: (s: FormState, f: FormData) => Promise<FormState>;
   values?: RecordValues; initialItems?: Item[]; submitLabel: string;
 }) {
   const { state, onSubmit, pending } = useKeepForm(action, {} as FormState);
+  // 編集時は保存済みの種類から区分を決める（インターンシップ〜なら「インターンシップ」、それ以外は「本選考」）
+  const editing = Boolean(values.title);
+  const t = values.record_type ?? "";
+  const has = (...v: (string | null | undefined)[]) => v.some((x) => Boolean(x && x.trim()));
+  // 編集時は、その記録の種類に関係する項目（と、内容が入っている項目）だけを表示する
+  const show = {
+    es: !editing || t.endsWith("ES") || initialItems.some((i) => i.kind === "es"),
+    interview: !editing || t.endsWith("面接") || initialItems.some((i) => i.kind === "interview") || has(values.interview_reflection),
+    intern: !editing || t === "インターンシップ" || has(values.intern_impression, values.intern_reflection),
+    gd: !editing || t === "グループディスカッション" || has(values.gd_reflection),
+    memo: !editing || t === "その他" || has(values.memo),
+  };
+  const scope = values.record_type?.startsWith("インターンシップ") ? "インターンシップ" : "本選考";
   const [items, setItems] = useState(() => initialItems.map((it, i) => ({ ...it, key: i })));
 
   return (
@@ -58,34 +83,42 @@ export function RecordForm({ action, values = {}, initialItems = [], submitLabel
         </>
       )}
 
-      <div className="space-y-6 rounded-xl bg-white p-5 ring-1 ring-slate-200">
+      <div className="space-y-6 rounded-xl bg-white p-5 ring-1 ring-slate-200 [&>section+section]:border-t [&>section+section]:border-slate-200 [&>section+section]:pt-6 [&>section]:space-y-3">
         <h2 className="text-base font-bold text-blue-900">記録内容</h2>
-      <section className="space-y-3">
-        <h2 className="font-bold text-blue-900">ESで書いた内容</h2>
-        <ItemList kind="es" items={items} setItems={setItems} qLabel="設問" aLabel="書いた内容" addLabel="設問を追加" />
-      </section>
-
-      <section className="space-y-3 border-t border-slate-200 pt-6">
-        <h2 className="font-bold text-blue-900">面接の質問と回答</h2>
-        <ItemList kind="interview" items={items} setItems={setItems} qLabel="聞かれた質問" aLabel="自分の回答" addLabel="質問を追加" />
-        <Field label="面接後の反省"><textarea name="interview_reflection" rows={4} defaultValue={values.interview_reflection ?? ""} className={inputCls} /></Field>
-      </section>
-
-      <section className="space-y-4 border-t border-slate-200 pt-6">
-        <h2 className="font-bold text-blue-900">インターンシップの感想と反省</h2>
-        <Field label="参加した感想"><textarea name="intern_impression" rows={4} defaultValue={values.intern_impression ?? ""} className={inputCls} /></Field>
-        <Field label="反省"><textarea name="intern_reflection" rows={4} defaultValue={values.intern_reflection ?? ""} className={inputCls} /></Field>
-      </section>
-
-      <section className="border-t border-slate-200 pt-6">
-        <h2 className="mb-3 font-bold text-blue-900">グループディスカッションの反省</h2>
-        <Field label="反省"><textarea name="gd_reflection" rows={4} defaultValue={values.gd_reflection ?? ""} className={inputCls} /></Field>
-      </section>
-
-      <section className="border-t border-slate-200 pt-6">
-        <h2 className="mb-3 font-bold text-blue-900">その他メモ</h2>
-        <Field label="メモ"><textarea name="memo" rows={4} defaultValue={values.memo ?? ""} className={inputCls} /></Field>
-      </section>
+      {show.es && (
+        <section>
+          <h2 className="font-bold text-blue-900">ESで書いた内容</h2>
+          <ScopeSelect name="es_scope" label="ESの区分" defaultValue={scope} />
+          <ItemList kind="es" items={items} setItems={setItems} qLabel="設問" aLabel="書いた内容" addLabel="設問を追加" />
+        </section>
+      )}
+      {show.interview && (
+        <section>
+          <h2 className="font-bold text-blue-900">面接の質問と回答</h2>
+          <ScopeSelect name="interview_scope" label="面接の区分" defaultValue={scope} />
+          <ItemList kind="interview" items={items} setItems={setItems} qLabel="聞かれた質問" aLabel="自分の回答" addLabel="質問を追加" />
+          <Field label="面接後の反省"><textarea name="interview_reflection" rows={4} defaultValue={values.interview_reflection ?? ""} className={inputCls} /></Field>
+        </section>
+      )}
+      {show.intern && (
+        <section>
+          <h2 className="font-bold text-blue-900">インターンシップの感想と反省</h2>
+          <Field label="参加した感想"><textarea name="intern_impression" rows={4} defaultValue={values.intern_impression ?? ""} className={inputCls} /></Field>
+          <Field label="反省"><textarea name="intern_reflection" rows={4} defaultValue={values.intern_reflection ?? ""} className={inputCls} /></Field>
+        </section>
+      )}
+      {show.gd && (
+        <section>
+          <h2 className="mb-3 font-bold text-blue-900">グループディスカッションの反省</h2>
+          <Field label="反省"><textarea name="gd_reflection" rows={4} defaultValue={values.gd_reflection ?? ""} className={inputCls} /></Field>
+        </section>
+      )}
+      {show.memo && (
+        <section>
+          <h2 className="mb-3 font-bold text-blue-900">その他メモ</h2>
+          <Field label="メモ"><textarea name="memo" rows={4} defaultValue={values.memo ?? ""} className={inputCls} /></Field>
+        </section>
+      )}
       </div>
 
       <Message error={state.error} success={state.success} />
