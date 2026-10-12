@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌸 就活管理アプリ
 
-## Getting Started
+就職活動に関する情報を、**ひとつの画面でまとめて管理できるWebアプリ**です。
+企業ごとの基本情報・企業研究・志望度・選考記録・日程を登録し、ダッシュボードとカレンダーで「今やること」をすぐ確認できます。
 
-First, run the development server:
+## 概要
+
+就職活動では、受ける企業が増えるほど「どの企業をいつまでに」「面接で何を聞かれて何と答えたか」「その企業の志望度はどのくらいか」がバラバラになりがちです。
+このアプリは、それらを**企業ごとに1か所へ集約**し、企業研究から選考対策、スケジュール管理までを1つで完結させることを目的にしています。
+
+- PC・スマートフォンの両方で使えるレスポンシブデザイン
+- ログインしたユーザーごとにデータを分離（他の人のデータは見えません）
+- ラベンダー×ピンクのやさしい「かわいい」デザイン
+
+## 対象とするユーザー
+
+- 就職活動中の学生（新卒・インターン参加者）
+- 複数の企業を並行して受けていて、情報や予定の管理が大変な人
+- ES・面接の内容を残して、あとで振り返りたい人
+
+個人利用を想定した作りです（1人のユーザーが自分の就活データだけを管理します）。
+
+## 主な機能
+
+| 機能 | 内容 |
+|---|---|
+| **ダッシュボード** | 登録企業数・選考中・内定の件数、直近の予定、ES・WEBテスト・内定承諾などの締切、選考状況、志望度の高い企業、最近更新した企業 |
+| **企業一覧** | 企業名の検索、業種・選考ステータスでの絞り込み、更新日・登録日・志望度での並べ替え。総合評価と次回の予定も一目で確認 |
+| **基本情報** | 企業名・業種・従業員数・本店所在地・資本金・事業内容・公式サイトなどを登録・編集。業種は選択式で、自分で追加も可能 |
+| **企業研究** | 気になった理由、企業の魅力、仕事内容、勤務地、給与、福利厚生、競合、強みなどを自由記述。参考URLは複数登録でき、タイトルやメモも付けられる |
+| **志望度評価** | 仕事内容・勤務地・給与・福利厚生・ワークライフバランスを★1〜5で評価。**総合評価は自動計算**（5項目の平均を四捨五入。未評価の項目があるときは「未評価」） |
+| **就活記録** | 現在の選考ステータス（14種類）の管理と、ESで書いた内容・面接の質問と回答（複数）・インターンの感想と反省・グループディスカッションの反省・メモの記録。過去の記録は上書きされず、履歴として残る |
+| **日程管理** | 説明会・ES締切・WEBテスト締切・面接・インターンなどの予定を登録。終了日時は任意で、終日の予定にも対応 |
+| **カレンダー** | 月・週・日の表示、予定の種類ごとの色分け、クリックで詳細表示・追加・編集・削除。企業詳細の日程と同じデータを表示 |
+
+「インターンシップ」と「本選考」を区別して、ES・面接・ES締切などを記録できます。
+
+## 使用技術
+
+| 分類 | 技術 |
+|---|---|
+| フロントエンド | [Next.js](https://nextjs.org) 16（App Router）/ React 19 / TypeScript |
+| スタイル | Tailwind CSS 4 |
+| データベース・認証 | [Supabase](https://supabase.com)（PostgreSQL / Auth / Row Level Security） |
+| カレンダー | [FullCalendar](https://fullcalendar.io) 6 |
+| フォント | Zen Maru Gothic |
+| デプロイ（想定） | Vercel |
+
+## 使い方
+
+### 画面の使い方
+
+1. **新規登録・ログイン**
+   ログイン画面の「アカウントを作成する」から、ユーザー名とパスワードで登録します（メールアドレスは不要）。
+   - ユーザー名: 好きな文字で入力できます（ひらがな・漢字も可）
+   - パスワード: 8文字以上で、英大文字・英小文字・数字・記号のうち2種類以上を含める
+2. **企業を登録する**
+   「企業一覧」→「＋企業を登録」から、企業名など基本情報を入力します。
+3. **企業のことを調べて残す**
+   企業の詳細画面の「企業研究」「志望度」タブに、調べた内容と★評価を記録します。
+4. **選考の進み具合を記録する**
+   「就活記録」タブで、現在の選考ステータスを更新し、ESや面接の内容・反省を記録します。
+5. **予定を登録する**
+   企業の「日程管理」タブ、または「カレンダー」から予定を追加します。ダッシュボードやカレンダーに自動で表示されます。
+6. **ダッシュボードで確認する**
+   毎日ここを開いて、直近の予定と締切を確認します。
+
+### 開発者向け：ローカルでの起動
+
+必要なもの: Node.js、Supabase のアカウント
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**初回セットアップ**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Supabase でプロジェクトを作成します。
+2. Supabase の SQL Editor で、`supabase/migrations/` のSQLを**番号順**に実行します（`0001` → `0002` → `0003`）。
+3. Supabase の Authentication → Sign In / Providers → Email で、**「Confirm email」をオフ**にして保存します。
+4. プロジェクト直下に `.env.local` を作り、次の2つを設定します（このファイルはGitに含めません）。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=（SupabaseプロジェクトのURL）
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=（Supabaseの publishable key）
+   ```
 
-## Learn More
+5. `npm run dev` を起動し、`http://localhost:3000` を開きます。
 
-To learn more about Next.js, take a look at the following resources:
+その他のコマンド:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run build   # 本番用ビルド
+npm run lint    # コードのチェック
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ドキュメント
 
-## Deploy on Vercel
+- [`CLAUDE.md`](./CLAUDE.md) … 設計・データベース・ディレクトリ構成・開発上の注意点などの詳細
+- [`TASK.md`](./TASK.md) … 最初の開発指示書（要件定義）
+- [`supabase/migrations/`](./supabase/migrations) … データベースの定義（SQL）
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 今後の予定
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 企業一覧の画面から直接、編集・削除できるようにする
+- Vercel へのデプロイ
