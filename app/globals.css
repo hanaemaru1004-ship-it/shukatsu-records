@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * かわいいテーマ: 既存の blue-* / slate-* クラスをやさしいラベンダー系に差し替える。
+ * （クラス名はそのまま、色と角丸だけをここで一括変更）
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-maru), "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+
+  --color-blue-50: #f8f3ff;
+  --color-blue-100: #efe6ff;
+  --color-blue-200: #e0d0ff;
+  --color-blue-300: #cbb4fb;
+  --color-blue-400: #b394f6;
+  --color-blue-500: #9a76ef;
+  --color-blue-600: #8660e6;
+  --color-blue-700: #7550d6;
+  --color-blue-800: #7a58dc;
+  --color-blue-900: #5f3fbd;
+
+  --color-slate-50: #fcf9ff;
+  --color-slate-100: #f5eefc;
+  --color-slate-200: #eadff6;
+  --color-slate-300: #dccdee;
+  --color-slate-400: #a99bbf;
+  --color-slate-500: #7f7194;
+  --color-slate-600: #655777;
+  --color-slate-700: #4d4160;
+  --color-slate-800: #382d49;
+  --color-slate-900: #261d35;
+
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #fff9fc;
+  --foreground: #382d49;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:
+    radial-gradient(60rem 30rem at 0% 0%, #ffe9f3 0%, transparent 60%),
+    radial-gradient(50rem 30rem at 100% 10%, #efe6ff 0%, transparent 60%),
+    #fff9fc;
+  background-attachment: fixed;
+  font-family: var(--font-maru), "Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
 }
+
+/* カード: ふんわりした影 */
+.bg-white.ring-1,
+.bg-blue-50.ring-1 {
+  box-shadow: 0 6px 20px -10px rgba(122, 88, 220, 0.35);
+}
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] > summary { background: #fcf9ff; }
+
+/* カレンダー(FullCalendar) */
+.fc {
+  --fc-button-bg-color: #9a76ef;
+  --fc-button-border-color: #9a76ef;
+  --fc-button-hover-bg-color: #8660e6;
+  --fc-button-hover-border-color: #8660e6;
+  --fc-button-active-bg-color: #6f4cd0;
+  --fc-button-active-border-color: #6f4cd0;
+  --fc-border-color: #eadff6;
+  --fc-today-bg-color: #fff0f7;
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: #f8f3ff;
+}
+.fc .fc-button { border-radius: 9999px; font-weight: 600; }
+.fc .fc-button-group > .fc-button:not(:first-child) { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.fc .fc-button-group > .fc-button:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.fc .fc-toolbar-title { color: #5f3fbd; font-weight: 700; }
+.fc .fc-col-header-cell-cushion, .fc .fc-daygrid-day-number { color: #4d4160; text-decoration: none; }
+.fc .fc-event { border-radius: 9999px; padding: 0 4px; border: 0; }
+
+/* カレンダー: 予定は開始日〜終了日の範囲だけに表示し、長いタイトルは枠内で省略する */
+.fc .fc-event,
+.fc .fc-daygrid-event,
+.fc .fc-daygrid-event-harness {
+  max-width: 100%;
+  overflow: hidden;
+}
+.fc .fc-event-main,
+.fc .fc-event-main-frame {
+  min-width: 0;
+  overflow: hidden;
+}
+.fc .fc-event-title,
+.fc .fc-event-title-container,
+.fc .fc-event-time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fc .fc-daygrid-event { cursor: pointer; font-size: 0.75rem; }
+.fc .fc-daygrid-event .fc-event-time { flex-shrink: 0; overflow: visible; text-overflow: clip; }
