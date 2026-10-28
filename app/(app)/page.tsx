@@ -57,7 +57,7 @@ export default async function Dashboard() {
   const favorites = rows.filter((r) => (r.overall ?? 0) >= 4).sort((a, b) => (b.overall ?? 0) - (a.overall ?? 0)).slice(0, 5);
 
   const stats = [
-    { label: "登録企業数", value: rows.length, tint: "bg-pink-50 text-pink-700", icon: "🏢" },
+    { label: "登録企業数", value: rows.filter((r) => r.status !== "未エントリー").length, tint: "bg-pink-50 text-pink-700", icon: "🏢" },
     { label: "選考中", value: rows.filter((r) => ACTIVE_STATUSES.includes(r.status)).length, tint: "bg-blue-100 text-blue-800", icon: "✏️" },
     { label: "内定", value: rows.filter((r) => r.status === "内定" || r.status === "内定承諾").length, tint: "bg-emerald-50 text-emerald-700", icon: "🎉" },
   ];

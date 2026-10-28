@@ -28,10 +28,10 @@ const TABS = [
 export const instant = false;
 
 export default async function CompanyDetail({ params, searchParams }: {
-  params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; rtype?: string; rstage?: string; rsort?: string }>;
+  params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }>;
 }) {
   const { id } = await params;
-  const { tab = "basic", ...recordFilters } = await searchParams;
+  const { tab = "basic" } = await searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
 
   const supabase = await createClient();
@@ -121,7 +121,7 @@ export default async function CompanyDetail({ params, searchParams }: {
       ) : current.key === "events" ? (
         <CompanyEvents companyId={id} companyName={company.name} events={events} now={now} />
       ) : current.key === "records" ? (
-        <RecordsTab companyId={id} status={company.status} filters={recordFilters} />
+        <RecordsTab companyId={id} status={company.status} />
       ) : (
         <div className="rounded-xl bg-white p-8 text-center text-sm text-slate-500 ring-1 ring-slate-200">
           「{current.label}」は次のフェーズで実装予定です。
