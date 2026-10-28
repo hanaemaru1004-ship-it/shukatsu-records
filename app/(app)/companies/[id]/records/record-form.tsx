@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
 import type { FormState } from "../../actions";
-import { Field, Message, SubmitButton, useKeepForm } from "@/components/ui";
+import { Field, Message, SubmitButton, useKeepForm, CancelButton } from "@/components/ui";
 import { btnSecondary, inputCls } from "@/components/styles";
 
 export type RecordValues = {
-  title?: string; record_date?: string; record_type?: string; stage?: string | null;
   intern_impression?: string | null; intern_reflection?: string | null;
   interview_reflection?: string | null; gd_reflection?: string | null; memo?: string | null;
 };
@@ -51,78 +50,48 @@ function ScopeSelect({ name, label, defaultValue }: { name: string; label: strin
   );
 }
 
-export function RecordForm({ action, values = {}, initialItems = [], submitLabel }: {
+export function RecordForm({ action, values = {}, initialItems = [], esScope = "本選考", ivScope = "本選考", submitLabel }: {
   action: (s: FormState, f: FormData) => Promise<FormState>;
-  values?: RecordValues; initialItems?: Item[]; submitLabel: string;
+  values?: RecordValues; initialItems?: Item[]; esScope?: string; ivScope?: string; submitLabel: string;
 }) {
   const { state, onSubmit, pending } = useKeepForm(action, {} as FormState);
-  // 編集時は保存済みの種類から区分を決める（インターンシップ〜なら「インターンシップ」、それ以外は「本選考」）
-  const editing = Boolean(values.title);
-  const t = values.record_type ?? "";
-  const has = (...v: (string | null | undefined)[]) => v.some((x) => Boolean(x && x.trim()));
-  // 編集時は、その記録の種類に関係する項目（と、内容が入っている項目）だけを表示する
-  const show = {
-    es: !editing || t.endsWith("ES") || initialItems.some((i) => i.kind === "es"),
-    interview: !editing || t.endsWith("面接") || initialItems.some((i) => i.kind === "interview") || has(values.interview_reflection),
-    intern: !editing || t === "インターンシップ" || has(values.intern_impression, values.intern_reflection),
-    gd: !editing || t === "グループディスカッション" || has(values.gd_reflection),
-    memo: !editing || t === "その他" || has(values.memo),
-  };
-  const scope = values.record_type?.startsWith("インターンシップ") ? "インターンシップ" : "本選考";
   const [items, setItems] = useState(() => initialItems.map((it, i) => ({ ...it, key: i })));
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      {/* タイトル・記録日・種類・段階は入力させない。新規は保存時に自動設定、編集時は既存の値を保持 */}
-      {values.title && (
-        <>
-          <input type="hidden" name="title" value={values.title} />
-          <input type="hidden" name="record_date" value={values.record_date ?? ""} />
-          <input type="hidden" name="record_type" value={values.record_type ?? ""} />
-          <input type="hidden" name="stage" value={values.stage ?? ""} />
-        </>
-      )}
-
       <div className="space-y-6 rounded-xl bg-white p-5 ring-1 ring-slate-200 [&>section+section]:border-t [&>section+section]:border-slate-200 [&>section+section]:pt-6 [&>section]:space-y-3">
         <h2 className="text-base font-bold text-blue-900">記録内容</h2>
-      {show.es && (
-        <section>
-          <h2 className="font-bold text-blue-900">ESで書いた内容</h2>
-          <ScopeSelect name="es_scope" label="ESの区分" defaultValue={scope} />
-          <ItemList kind="es" items={items} setItems={setItems} qLabel="設問" aLabel="書いた内容" addLabel="設問を追加" />
-        </section>
-      )}
-      {show.interview && (
-        <section>
-          <h2 className="font-bold text-blue-900">面接の質問と回答</h2>
-          <ScopeSelect name="interview_scope" label="面接の区分" defaultValue={scope} />
-          <ItemList kind="interview" items={items} setItems={setItems} qLabel="聞かれた質問" aLabel="自分の回答" addLabel="質問を追加" />
-          <Field label="面接後の反省"><textarea name="interview_reflection" rows={4} defaultValue={values.interview_reflection ?? ""} className={inputCls} /></Field>
-        </section>
-      )}
-      {show.intern && (
-        <section>
-          <h2 className="font-bold text-blue-900">インターンシップの感想と反省</h2>
-          <Field label="参加した感想"><textarea name="intern_impression" rows={4} defaultValue={values.intern_impression ?? ""} className={inputCls} /></Field>
-          <Field label="反省"><textarea name="intern_reflection" rows={4} defaultValue={values.intern_reflection ?? ""} className={inputCls} /></Field>
-        </section>
-      )}
-      {show.gd && (
-        <section>
-          <h2 className="mb-3 font-bold text-blue-900">グループディスカッションの反省</h2>
-          <Field label="反省"><textarea name="gd_reflection" rows={4} defaultValue={values.gd_reflection ?? ""} className={inputCls} /></Field>
-        </section>
-      )}
-      {show.memo && (
-        <section>
-          <h2 className="mb-3 font-bold text-blue-900">その他メモ</h2>
-          <Field label="メモ"><textarea name="memo" rows={4} defaultValue={values.memo ?? ""} className={inputCls} /></Field>
-        </section>
-      )}
+      <section>
+        <h2 className="font-bold text-blue-900">ESで書いた内容</h2>
+        <ScopeSelect name="es_scope" label="ESの区分" defaultValue={esScope} />
+        <ItemList kind="es" items={items} setItems={setItems} qLabel="設問" aLabel="書いた内容" addLabel="設問を追加" />
+      </section>
+      <section>
+        <h2 className="font-bold text-blue-900">面接の質問と回答</h2>
+        <ScopeSelect name="interview_scope" label="面接の区分" defaultValue={ivScope} />
+        <ItemList kind="interview" items={items} setItems={setItems} qLabel="聞かれた質問" aLabel="自分の回答" addLabel="質問を追加" />
+        <Field label="面接後の反省"><textarea name="interview_reflection" rows={4} defaultValue={values.interview_reflection ?? ""} className={inputCls} /></Field>
+      </section>
+      <section>
+        <h2 className="font-bold text-blue-900">インターンシップの感想と反省</h2>
+        <Field label="参加した感想"><textarea name="intern_impression" rows={4} defaultValue={values.intern_impression ?? ""} className={inputCls} /></Field>
+        <Field label="反省"><textarea name="intern_reflection" rows={4} defaultValue={values.intern_reflection ?? ""} className={inputCls} /></Field>
+      </section>
+      <section>
+        <h2 className="mb-3 font-bold text-blue-900">グループディスカッションの反省</h2>
+        <Field label="反省"><textarea name="gd_reflection" rows={4} defaultValue={values.gd_reflection ?? ""} className={inputCls} /></Field>
+      </section>
+      <section>
+        <h2 className="mb-3 font-bold text-blue-900">その他メモ</h2>
+        <Field label="メモ"><textarea name="memo" rows={4} defaultValue={values.memo ?? ""} className={inputCls} /></Field>
+      </section>
       </div>
 
       <Message error={state.error} success={state.success} />
-      <SubmitButton pending={pending}>{submitLabel}</SubmitButton>
+      <div className="flex gap-2">
+        <SubmitButton pending={pending}>{submitLabel}</SubmitButton>
+        <CancelButton />
+      </div>
     </form>
   );
 }

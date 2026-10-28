@@ -1,16 +1,13 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { RECORD_STAGES, RECORD_TYPES, STATUSES, statusClass } from "@/lib/constants";
+import { STATUSES, statusClass } from "@/lib/constants";
 import { updateStatus } from "../../actions";
-import { RecordForm } from "./record-form";
+import { ViewEdit } from "@/components/view-edit";
+import { RecordForm, type Item, type RecordValues } from "./record-form";
 import { saveRecord } from "./actions";
-import { btnPrimary, btnSecondary, inputCls } from "@/components/styles";
-
-export type RecordFilters = { rtype?: string; rstage?: string; rsort?: string };
-
+import { btnPrimary, inputCls } from "@/components/styles";
 
 type RecordRow = {
-  id: string; title: string; record_type: string; record_date: string; stage: string | null;
+  record_type: string;
   intern_impression: string | null; intern_reflection: string | null; interview_reflection: string | null;
   gd_reflection: string | null; memo: string | null;
   record_items: { kind: string; question: string; answer: string; sort_order: number }[] | null;
@@ -35,54 +32,79 @@ const QA = ({ label, items, prefix }: { label: string; items: { question: string
   </div>
 );
 
+const scopeOf = (type: string) => (type.startsWith("インターンシップ") ? "インターンシップ" : "本選考");
+
 /**
- * 履歴は項目ごとに別々に表示する。
- * 新規保存では項目ごとに別の記録になるが、以前にまとめて保存した記録（複数項目を含む）も、ここで項目ごとに分けて見せる。
+ * 企業の就活記録は1つにまとめて扱う。
+ * 以前の仕様で複数の記録（履歴）がある場合も、項目ごとに内容をつなげて1つとして見せる。
  */
-function splitRecord(r: RecordRow) {
-  const items = [...(r.record_items ?? [])].sort((a, b) => a.sort_order - b.sort_order);
-  const es = items.filter((i) => i.kind === "es");
-  const iv = items.filter((i) => i.kind === "interview");
-  const scope = r.record_type.startsWith("インターンシップ") ? "インターンシップ" : "本選考";
-  const out: { key: string; label: string; title: string; body: React.ReactNode }[] = [];
-  const add = (key: string, label: string, body: React.ReactNode) => out.push({ key, label, title: "", body });
-
-  if (es.length) add("es", `${scope}ES`, <QA label="ESで書いた内容" items={es} />);
-  if (iv.length || r.interview_reflection) {
-    add("iv", `${scope}面接`, (
-      <>
-        {iv.length > 0 && <QA label="面接の質問と回答" items={iv} prefix={["Q. ", "A. "]} />}
-        {r.interview_reflection && <Text label="面接後の反省" value={r.interview_reflection} />}
-      </>
-    ));
-  }
-  if (r.intern_impression || r.intern_reflection) {
-    add("intern", "インターンシップ", (
-      <>
-        {r.intern_impression && <Text label="インターン参加の感想" value={r.intern_impression} />}
-        {r.intern_reflection && <Text label="インターンでの反省" value={r.intern_reflection} />}
-      </>
-    ));
-  }
-  if (r.gd_reflection) add("gd", "グループディスカッション", <Text label="グループディスカッションの反省" value={r.gd_reflection} />);
-  if (r.memo) add("memo", out.length ? "その他メモ" : r.record_type, <Text label="その他メモ" value={r.memo} />);
-  if (!out.length) add("empty", r.record_type, null);
-
-  // 1項目だけの記録は保存されたタイトルをそのまま、複数項目の記録は項目ごとのタイトルにする
-  return out.map((e) => ({ ...e, title: out.length === 1 ? r.title : `${r.record_date} ${e.label}` }));
+function mergeRecords(rows: RecordRow[]) {
+  const join = (pick: (r: RecordRow) => string | null) => rows.map(pick).filter(Boolean).join("\n\n") || null;
+  const items: Item[] = rows.flatMap((r) =>
+    [...(r.record_items ?? [])].sort((a, b) => a.sort_order - b.sort_order)
+      .map((i) => ({ kind: i.kind as Item["kind"], question: i.question, answer: i.answer })));
+  const values: RecordValues = {
+    intern_impression: join((r) => r.intern_impression),
+    intern_reflection: join((r) => r.intern_reflection),
+    interview_reflection: join((r) => r.interview_reflection),
+    gd_reflection: join((r) => r.gd_reflection),
+    memo: join((r) => r.memo),
+  };
+  // 区分は、その項目を含む記録のうち最新（先頭）のものから決める
+  const typeOf = (has: (r: RecordRow) => boolean) => rows.find(has)?.record_type ?? "";
+  const esScope = scopeOf(typeOf((r) => (r.record_items ?? []).some((i) => i.kind === "es")));
+  const ivScope = scopeOf(typeOf((r) => (r.record_items ?? []).some((i) => i.kind === "interview") || Boolean(r.interview_reflection)));
+  return { values, items, esScope, ivScope };
 }
 
-export async function RecordsTab({ companyId, status, filters }: { companyId: string; status: string; filters: RecordFilters }) {
-  const { rtype = "", rstage = "", rsort = "new" } = filters;
+function RecordsView({ values, items, esScope, ivScope }: ReturnType<typeof mergeRecords>) {
+  const es = items.filter((i) => i.kind === "es");
+  const iv = items.filter((i) => i.kind === "interview");
+  return (
+    <div className="space-y-6 rounded-xl bg-white p-5 text-sm ring-1 ring-slate-200 [&>section]:space-y-3 [&>section+section]:border-t [&>section+section]:border-slate-200 [&>section+section]:pt-6">
+      {es.length > 0 && (
+        <section>
+          <h2 className="font-bold text-blue-900">{esScope}ES</h2>
+          <QA label="ESで書いた内容" items={es} />
+        </section>
+      )}
+      {(iv.length > 0 || values.interview_reflection) && (
+        <section>
+          <h2 className="font-bold text-blue-900">{ivScope}面接</h2>
+          {iv.length > 0 && <QA label="面接の質問と回答" items={iv} prefix={["Q. ", "A. "]} />}
+          {values.interview_reflection && <Text label="面接後の反省" value={values.interview_reflection} />}
+        </section>
+      )}
+      {(values.intern_impression || values.intern_reflection) && (
+        <section>
+          <h2 className="font-bold text-blue-900">インターンシップ</h2>
+          {values.intern_impression && <Text label="インターン参加の感想" value={values.intern_impression} />}
+          {values.intern_reflection && <Text label="インターンでの反省" value={values.intern_reflection} />}
+        </section>
+      )}
+      {values.gd_reflection && (
+        <section>
+          <h2 className="font-bold text-blue-900">グループディスカッション</h2>
+          <Text label="グループディスカッションの反省" value={values.gd_reflection} />
+        </section>
+      )}
+      {values.memo && (
+        <section>
+          <h2 className="font-bold text-blue-900">その他メモ</h2>
+          <Text label="その他メモ" value={values.memo} />
+        </section>
+      )}
+    </div>
+  );
+}
+
+export async function RecordsTab({ companyId, status }: { companyId: string; status: string }) {
   const supabase = await createClient();
-  let q = supabase.from("records").select("*, record_items(kind,question,answer,sort_order)").eq("company_id", companyId);
-  if (rtype) q = q.eq("record_type", rtype);
-  if (rstage) q = q.eq("stage", rstage);
-  q = q.order("record_date", { ascending: rsort === "old" }).order("created_at", { ascending: rsort === "old" });
-  const { data: records, error } = await q;
-  const filtered = Boolean(rtype || rstage);
-  const { data: all } = await supabase.from("records").select("id").eq("company_id", companyId);
-  const allIds = (all ?? []).map((r) => r.id).sort().join(",");
+  const { data, error } = await supabase
+    .from("records").select("*, record_items(kind,question,answer,sort_order)")
+    .eq("company_id", companyId).order("created_at", { ascending: false });
+  const rows = (data ?? []) as RecordRow[];
+  const merged = mergeRecords(rows);
 
   return (
     <div className="space-y-4">
@@ -95,61 +117,21 @@ export async function RecordsTab({ companyId, status, filters }: { companyId: st
           <button className={btnPrimary}>更新</button>
           <span className={`rounded-full px-2 py-0.5 text-xs ${statusClass(status)}`}>現在: {status}</span>
         </form>
-        <p className="mt-2 text-xs text-slate-500">企業の現在の状態です。いつでも変更できます。下の記録は上書きされず残ります。</p>
+        <p className="mt-2 text-xs text-slate-500">企業の現在の状態です。いつでも変更できます。</p>
       </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-bold text-blue-900">新しい記録を追加</h2>
-        {/* 保存後に入力欄を初期化するため、記録の増減で key を変える */}
-        <RecordForm key={allIds} action={saveRecord.bind(null, companyId, null)} submitLabel="記録を追加する" />
-      </section>
-
-      <h2 className="pt-2 text-sm font-bold text-blue-900">過去の記録</h2>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <form className="flex flex-wrap gap-2">
-          <input type="hidden" name="tab" value="records" />
-          <select name="rtype" defaultValue={rtype} className={`${inputCls} w-auto`} aria-label="記録の種類">
-            <option value="">種類: すべて</option>
-            {RECORD_TYPES.map((t) => <option key={t}>{t}</option>)}
-          </select>
-          <select name="rstage" defaultValue={rstage} className={`${inputCls} w-auto`} aria-label="選考段階">
-            <option value="">段階: すべて</option>
-            {RECORD_STAGES.map((t) => <option key={t}>{t}</option>)}
-          </select>
-          <select name="rsort" defaultValue={rsort} className={`${inputCls} w-auto`} aria-label="並べ替え">
-            <option value="new">記録日が新しい順</option>
-            <option value="old">記録日が古い順</option>
-          </select>
-          <button className={btnSecondary}>適用</button>
-        </form>
-      </div>
 
       {error && <p role="alert" className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">読み込みに失敗しました: {error.message}</p>}
 
-      {!records?.length ? (
-        <div className="rounded-xl bg-white p-8 text-center text-sm text-slate-500 ring-1 ring-slate-200">
-          {filtered ? "条件に一致する記録がありません" : "まだ記録がありません。上のフォームから追加できます。"}
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {(records as RecordRow[]).flatMap((r) => splitRecord(r).map((e) => (
-            <li key={`${r.id}-${e.key}`} className="rounded-xl bg-white ring-1 ring-slate-200">
-              <details>
-                <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
-                  <span className="font-medium text-blue-900">{e.title}</span>
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-800">{e.label}</span>
-                  {r.stage && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{r.stage}</span>}
-                  <span className="text-xs text-slate-500">{r.record_date}</span>
-                </summary>
-                <div className="space-y-4 border-t border-slate-100 px-4 py-4 text-sm">
-                  {e.body}
-                  <Link href={`/companies/${companyId}/records/${r.id}`} className={btnSecondary}>✏️ 編集・削除</Link>
-                </div>
-              </details>
-            </li>
-          )))}
-        </ul>
-      )}
+      <ViewEdit startEditing={rows.length === 0} view={<RecordsView {...merged} />}>
+        <RecordForm
+          action={saveRecord.bind(null, companyId)}
+          values={merged.values}
+          initialItems={merged.items}
+          esScope={merged.esScope}
+          ivScope={merged.ivScope}
+          submitLabel="保存する"
+        />
+      </ViewEdit>
     </div>
   );
 }

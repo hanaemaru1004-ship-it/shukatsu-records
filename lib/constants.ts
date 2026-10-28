@@ -6,7 +6,7 @@ export const STATUSES = [
 export type Status = (typeof STATUSES)[number];
 
 export const ACTIVE_STATUSES: Status[] = [
-  "プレエントリー済み", "インターンシップES提出", "本選考ES提出", "インターンシップ選考",
+  "インターンシップES提出", "本選考ES提出", "インターンシップ選考",
   "一次選考", "二次選考", "三次選考", "最終選考",
 ];
 
