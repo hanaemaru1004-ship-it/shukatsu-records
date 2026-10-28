@@ -36,7 +36,7 @@ export function CompanyView({ c }: { c: CompanyData }) {
         <Row label="資本金" value={c.capital} />
       </div>
       <Row label="企業公式サイトURL" value={c.website_url} link />
-      <Row label="事業内容" value={c.business_description} />
+      <Row label="会社概要" value={c.business_description} />
       <Row label="その他メモ" value={c.memo} />
     </dl>
   );
@@ -44,48 +44,40 @@ export function CompanyView({ c }: { c: CompanyData }) {
 
 export type ResearchData = Partial<Record<
   "reason" | "attractions" | "job_description" | "location" | "starting_salary" | "average_salary" |
-  "salary_other" | "benefits" | "competitors" | "strengths" | "memo", string | null>>;
+  "average_age" | "benefits" | "strengths" | "memo", string | null>>;
 
 export function ResearchView({ r, refs }: { r: ResearchData; refs: { url: string; title: string | null; note: string | null }[] }) {
   return (
-    <div className="space-y-4">
-      <dl className={`${card} space-y-4`}>
-        <h2 className="font-bold text-blue-900">企業への関心</h2>
-        <Row label="気になった理由" value={r.reason} />
-        <Row label="企業の魅力" value={r.attractions} />
-      </dl>
-      <dl className={`${card} space-y-4`}>
-        <h2 className="font-bold text-blue-900">仕事・条件</h2>
-        <Row label="仕事内容" value={r.job_description} />
-        <Row label="勤務地" value={r.location} />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Row label="初任給" value={r.starting_salary} />
-          <Row label="平均年収" value={r.average_salary} />
-        </div>
-        <Row label="その他給与に関する情報" value={r.salary_other} />
-        <Row label="福利厚生" value={r.benefits} />
-      </dl>
-      <dl className={`${card} space-y-4`}>
-        <h2 className="font-bold text-blue-900">他社との比較</h2>
-        <Row label="競合企業" value={r.competitors} />
-        <Row label="他社と比較したときの強み" value={r.strengths} />
-      </dl>
-      <div className={`${card} space-y-3`}>
-        <h2 className="font-bold text-blue-900">参考URL</h2>
-        {refs.length === 0 ? <p className="text-sm text-slate-400">登録されていません</p> : (
-          <ul className="space-y-2">
-            {refs.map((u, i) => (
-              <li key={i} className="rounded-lg bg-slate-50 p-3 text-sm">
-                <a href={u.url} target="_blank" rel="noopener noreferrer" className="break-all font-medium text-blue-800 underline">{u.title || u.url}</a>
-                {u.title && <p className="break-all text-xs text-slate-500">{u.url}</p>}
-                {u.note && <p className="mt-1 whitespace-pre-wrap text-slate-700">{u.note}</p>}
-              </li>
-            ))}
-          </ul>
-        )}
+    <dl className={`${card} space-y-4`}>
+      <Row label="事業内容" value={r.reason} />
+      <Row label="注目の事業" value={r.attractions} />
+      <Row label="仕事内容" value={r.job_description} />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Row label="初任給" value={r.starting_salary} />
+        <Row label="平均年収" value={r.average_salary} />
+        <Row label="平均年齢" value={r.average_age} />
       </div>
-      <dl className={card}><Row label="その他メモ" value={r.memo} /></dl>
-    </div>
+      <Row label="勤務地" value={r.location} />
+      <Row label="福利厚生" value={r.benefits} />
+      <Row label="他社と比較したときの強み" value={r.strengths} />
+      <div>
+        <dt className="text-xs font-medium text-slate-500">参考URL</dt>
+        <dd className="mt-0.5">
+          {refs.length === 0 ? <span className="text-sm text-slate-400">未入力</span> : (
+            <ul className="space-y-2">
+              {refs.map((u, i) => (
+                <li key={i} className="rounded-lg bg-slate-50 p-3 text-sm">
+                  <a href={u.url} target="_blank" rel="noopener noreferrer" className="break-all font-medium text-blue-800 underline">{u.title || u.url}</a>
+                  {u.title && <p className="break-all text-xs text-slate-500">{u.url}</p>}
+                  {u.note && <p className="mt-1 whitespace-pre-wrap text-slate-700">{u.note}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </dd>
+      </div>
+      <Row label="その他" value={r.memo} />
+    </dl>
   );
 }
 

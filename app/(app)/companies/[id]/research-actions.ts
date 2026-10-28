@@ -11,7 +11,7 @@ const text = (f: FormData, k: string) => {
 
 const FIELDS = [
   "reason", "attractions", "job_description", "location", "starting_salary", "average_salary",
-  "salary_other", "benefits", "competitors", "strengths", "memo",
+  "average_age", "benefits", "strengths", "memo",
 ] as const;
 
 export async function saveResearch(companyId: string, _: FormState, f: FormData): Promise<FormState> {

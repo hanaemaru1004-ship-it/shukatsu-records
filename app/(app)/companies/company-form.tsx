@@ -45,7 +45,7 @@ export function CompanyForm({ action, industries, values = {}, submitLabel }: {
         <Field label="資本金"><input name="capital" defaultValue={values.capital ?? ""} className={inputCls} /></Field>
         <Field label="企業公式サイトURL"><input name="website_url" type="url" defaultValue={values.website_url ?? ""} className={inputCls} placeholder="https://" /></Field>
       </div>
-      <Field label="事業内容"><textarea name="business_description" rows={4} defaultValue={values.business_description ?? ""} className={inputCls} /></Field>
+      <Field label="会社概要"><textarea name="business_description" rows={4} defaultValue={values.business_description ?? ""} className={inputCls} /></Field>
       <Field label="その他メモ"><textarea name="memo" rows={3} defaultValue={values.memo ?? ""} className={inputCls} /></Field>
       <Message error={state.error} success={state.success} />
       <div className="flex gap-2">

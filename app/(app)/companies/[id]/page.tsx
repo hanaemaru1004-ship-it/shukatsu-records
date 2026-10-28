@@ -57,7 +57,7 @@ export default async function CompanyDetail({ params, searchParams }: {
   // 保存済みの内容があれば閲覧表示、無ければ最初から入力フォームを表示する
   const filled = (o: Record<string, unknown> | null | undefined, keys?: string[]) =>
     Object.entries(o ?? {}).some(([k, v]) => (!keys || keys.some((p) => k.endsWith(p))) && v !== null && v !== undefined && String(v).trim() !== "");
-  const hasResearch = filled(research as Record<string, unknown> | null, ["reason", "attractions", "job_description", "location", "salary", "benefits", "competitors", "strengths", "memo"]) || refs.length > 0;
+  const hasResearch = filled(research as Record<string, unknown> | null, ["reason", "attractions", "job_description", "location", "salary", "average_age", "benefits", "strengths", "memo"]) || refs.length > 0;
   const hasRating = filled(rating as Record<string, unknown> | null, ["_rating", "_comment"]);
 
   const now = nowMs();
